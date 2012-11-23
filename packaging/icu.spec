@@ -75,11 +75,11 @@ chmod +x %{buildroot}/%{_libdir}/lib*.so.*
 %{_bindir}/icuinfo
 %{_bindir}/icu-config
 %{_sbindir}/*
-%dir /usr/share/icu/4.8.1
-/usr/share/icu/4.8.1/config/mh-linux
-/usr/share/icu/4.8.1/install-sh
-/usr/share/icu/4.8.1/license.html
-/usr/share/icu/4.8.1/mkinstalldirs
+%dir %{_datadir}/icu/4.8.1.1
+%{_datadir}/icu/4.8.1.1/config/mh-linux
+%{_datadir}/icu/4.8.1.1/install-sh
+%{_datadir}/icu/4.8.1.1/license.html
+%{_datadir}/icu/4.8.1.1/mkinstalldirs
 
 %files -n lib%{name}-devel
 %{_includedir}/layout
