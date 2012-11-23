@@ -46,6 +46,7 @@ cd source
 make
 
 %install
+cd source
 %make_install
 
 # bugs of rpmdeps
