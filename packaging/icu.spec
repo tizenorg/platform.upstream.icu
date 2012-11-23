@@ -38,7 +38,7 @@ Requires: pkgconfig
 Includes and definitions for developing with icu.
 
 %prep
-%setup -q
+%setup -q -n %{name}
 
 %build
 cd source
