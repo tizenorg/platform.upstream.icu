@@ -693,7 +693,7 @@ static const char* testCases[][2]= {
     {"de_LU_PREEURO", "1,150\\u00A0F" },
     {"el_GR_PREEURO", "1.150,50\\u00A0\\u0394\\u03C1\\u03C7" },
     {"en_BE_PREEURO", "1.150,50\\u00A0BEF" },
-    {"es_ES_PREEURO", "\\u20A7\\u00A01.150" },
+    {"es_ES_PREEURO", "1.150\\u00A0\\u20A7" },
     {"eu_ES_PREEURO", "1.150\\u00A0\\u20A7" },
     {"gl_ES_PREEURO", "1.150\\u00A0\\u20A7" },
     {"it_IT_PREEURO", "ITL\\u00A01.150" },
@@ -5964,10 +5964,11 @@ NumberFormatTest::TestParseCurrencyInUCurr() {
       UnicodeString formatted = ctou(DATA[i]);
       UErrorCode status = U_ZERO_ERROR;
       NumberFormat* numFmt = NumberFormat::createInstance(locale, UNUM_CURRENCY, status);
-      Formattable parseResult;
       if (numFmt != NULL && U_SUCCESS(status)) {
-          numFmt->parse(formatted, parseResult, status);
-          if (U_FAILURE(status) ||
+          Formattable parseResult;
+          ParsePosition parsePos;
+          numFmt->parseCurrency(formatted, parseResult, parsePos);
+          if (parsePos.getIndex() == 0 ||
               (parseResult.getType() == Formattable::kDouble &&
                parseResult.getDouble() != 1.0)) {
               errln("wrong parsing, " + formatted);
@@ -5985,10 +5986,11 @@ NumberFormatTest::TestParseCurrencyInUCurr() {
       UnicodeString formatted = ctou(WRONG_DATA[i]);
       UErrorCode status = U_ZERO_ERROR;
       NumberFormat* numFmt = NumberFormat::createInstance(locale, UNUM_CURRENCY, status);
-      Formattable parseResult;
       if (numFmt != NULL && U_SUCCESS(status)) {
-          numFmt->parse(formatted, parseResult, status);
-          if (!U_FAILURE(status) ||
+          Formattable parseResult;
+          ParsePosition parsePos;
+          numFmt->parseCurrency(formatted, parseResult, parsePos);
+          if (parsePos.getIndex() > 0 ||
               (parseResult.getType() == Formattable::kDouble &&
                parseResult.getDouble() == 1.0)) {
               errln("parsed but should not be: " + formatted);

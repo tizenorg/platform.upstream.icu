@@ -976,7 +976,7 @@ static UResourceBundle *init_resb_result(const ResourceData *rdata, Resource r,
                             } else if(idx != -1) {
                                 /* if there is no key, but there is an index, try to get by the index */
                                 /* here we have either a table or an array, so get the element */
-                                UResType type = RES_GET_TYPE(r);
+                                int32_t type = RES_GET_TYPE(r);
                                 if(URES_IS_TABLE(type)) {
                                     r = res_getTableItemByIndex(&(mainRes->fResData), r, idx, (const char **)&aKey);
                                 } else { /* array */
@@ -1685,7 +1685,7 @@ ures_getByKeyWithFallback(const UResourceBundle *resB,
     /*UResourceDataEntry *realData = NULL;*/
     const char *key = inKey;
     UResourceBundle *helper = NULL;
-    UResType type;
+	int32_t type;
 
     if (status==NULL || U_FAILURE(*status)) {
         return fillIn;
@@ -1763,7 +1763,7 @@ U_CAPI UResourceBundle* U_EXPORT2 ures_getByKey(const UResourceBundle *resB, con
     Resource res = RES_BOGUS;
     UResourceDataEntry *realData = NULL;
     const char *key = inKey;
-    UResType type;
+	int32_t type;
 
     if (status==NULL || U_FAILURE(*status)) {
         return fillIn;
@@ -1816,8 +1816,8 @@ U_CAPI UResourceBundle* U_EXPORT2 ures_getByKey(const UResourceBundle *resB, con
 U_CAPI const UChar* U_EXPORT2 ures_getStringByKey(const UResourceBundle *resB, const char* inKey, int32_t* len, UErrorCode *status) {
     Resource res = RES_BOGUS;
     UResourceDataEntry *realData = NULL;
+	int32_t type;
     const char* key = inKey;
-    UResType type;
 
     if (status==NULL || U_FAILURE(*status)) {
         return NULL;

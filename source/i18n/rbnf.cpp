@@ -75,7 +75,7 @@ The RTTI code was also removed due to lack of code coverage.
 */
 class LocalizationInfo : public UMemory {
 protected:
-    virtual ~LocalizationInfo() {};
+    virtual ~LocalizationInfo() {}
     uint32_t refcount;
     
 public:
@@ -1067,7 +1067,15 @@ RuleBasedNumberFormat::format(double number,
                               UnicodeString& toAppendTo,
                               FieldPosition& /* pos */) const
 {
-    if (defaultRuleSet) defaultRuleSet->format(number, toAppendTo, toAppendTo.length());
+    // Special case for NaN; adapted from what DecimalFormat::_format( double number,...) does.
+    if (uprv_isNaN(number)) {
+        DecimalFormatSymbols* decFmtSyms = getDecimalFormatSymbols(); // RuleBasedNumberFormat internal
+        if (decFmtSyms) {
+            toAppendTo += decFmtSyms->getConstSymbol(DecimalFormatSymbols::kNaNSymbol);
+        }
+    } else if (defaultRuleSet) {
+        defaultRuleSet->format(number, toAppendTo, toAppendTo.length());
+    }
     return toAppendTo;
 }
 
