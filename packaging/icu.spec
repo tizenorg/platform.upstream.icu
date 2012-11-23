@@ -1,11 +1,11 @@
 Name:      icu
-Version:   4.8
+Version:   4.8.1.1
 Release:   1
 Summary:   International Components for Unicode
 Group:     Development/Tools
 License:   ICU
 URL:       http://www.icu-project.org/
-Source0:   icu4c-4_8-src.tgz
+Source0:   /tmp/icu4c-4_8_1_1-src.tgz
 BuildRequires: doxygen
 BuildRequires: autoconf
 
