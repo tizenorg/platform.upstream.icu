@@ -207,7 +207,7 @@ PluralRules::getKeywords(UErrorCode& status) const {
 
 double
 PluralRules::getUniqueKeywordValue(const UnicodeString& keyword) {
-  double val;
+  double val = 0.0;
   UErrorCode status = U_ZERO_ERROR;
   int32_t count = getSamplesInternal(keyword, &val, 1, FALSE, status);
   return count == 1 ? val : UPLRULES_NO_UNIQUE_VALUE;
@@ -419,6 +419,9 @@ PluralRules::parseDescription(UnicodeString& data, RuleChain& rules, UErrorCode 
                     ruleChain=ruleChain->next;
                 }
                 ruleChain=ruleChain->next=new RuleChain();
+            }
+            if (ruleChain->ruleHeader != NULL) {
+                delete ruleChain->ruleHeader;
             }
             orNode = ruleChain->ruleHeader = new OrConstraint();
             curAndConstraint = orNode->add();
