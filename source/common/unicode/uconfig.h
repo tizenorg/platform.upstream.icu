@@ -1,4 +1,4 @@
-/*  
+/*
 **********************************************************************
 *   Copyright (C) 2002-2016, International Business Machines
 *   Corporation and others.  All Rights Reserved.
@@ -74,7 +74,7 @@
 #endif
 
 /**
- * Determines wheter to enable auto cleanup of libraries. 
+ * Determines wheter to enable auto cleanup of libraries.
  * @internal
  */
 #ifndef UCLN_NO_AUTO_CLEANUP
@@ -87,7 +87,7 @@
  * @internal
  */
 #ifndef U_DISABLE_RENAMING
-#define U_DISABLE_RENAMING 0
+#define U_DISABLE_RENAMING 1
 #endif
 
 /**
