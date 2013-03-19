@@ -5,7 +5,7 @@ Summary:   International Components for Unicode
 Group:     Development/Tools
 License:   ICU
 URL:       http://www.icu-project.org/
-Source0:   /tmp/icu4c-4_8_1_1-src.tgz
+Source0:   icu4c-4_8_1_1-src.tgz
 BuildRequires: doxygen
 BuildRequires: autoconf
 
@@ -14,7 +14,7 @@ Tools and utilities for developing with icu.
 
 %package -n lib%{name}
 Summary: International Components for Unicode - libraries
-Group:   System/Libraries
+Group:   System/i18n
 
 %description -n lib%{name}
 The International Components for Unicode (ICU) libraries provide
