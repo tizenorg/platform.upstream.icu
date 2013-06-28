@@ -6,6 +6,7 @@ Group:     Development/Tools
 License:   ICU
 URL:       http://www.icu-project.org/
 Source0:   icu4c-4_8_1_1-src.tgz
+Source1001: 	icu.manifest
 BuildRequires: doxygen
 BuildRequires: autoconf
 
@@ -39,6 +40,7 @@ Includes and definitions for developing with icu.
 
 %prep
 %setup -q -n %{name}
+cp %{SOURCE1001} .
 
 %build
 cd source
@@ -60,8 +62,10 @@ chmod +x %{buildroot}/%{_libdir}/lib*.so.*
 %postun -n lib%{name} -p /sbin/ldconfig
 
 %files
+%manifest %{name}.manifest
 
 %files -n lib%{name}
+%manifest %{name}.manifest
 %{_libdir}/*.so*
 %{_bindir}/derb
 %{_bindir}/genbrk
@@ -82,6 +86,7 @@ chmod +x %{buildroot}/%{_libdir}/lib*.so.*
 %{_datadir}/icu/4.8.1.1/mkinstalldirs
 
 %files -n lib%{name}-devel
+%manifest %{name}.manifest
 %{_includedir}/layout
 %{_includedir}/unicode
 %{_libdir}/*.so
