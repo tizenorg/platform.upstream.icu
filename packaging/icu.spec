@@ -2,10 +2,11 @@ Name:      icu
 Version:   4.8.1.1
 Release:   1
 Summary:   International Components for Unicode
-Group:     Development/Tools
+Group:      System/Libraries
 License:   ICU
 URL:       http://www.icu-project.org/
-Source0:   icu4c-4_8_1_1-src.tgz
+%define tar_version  %(echo %{version} | sed -e "s/\\./\_/g")
+Source0:   icu4c-%{tar_version}-src.tgz
 Source1001: 	icu.manifest
 BuildRequires: doxygen
 BuildRequires: autoconf
@@ -13,11 +14,10 @@ BuildRequires: autoconf
 %description
 Tools and utilities for developing with icu.
 
-%package -n lib%{name}
+%package -n libicu
 Summary: International Components for Unicode - libraries
-Group:   System/i18n
 
-%description -n lib%{name}
+%description -n libicu
 The International Components for Unicode (ICU) libraries provide
 robust and full-featured Unicode services on a wide variety of
 platforms. ICU supports the most current version of the Unicode
@@ -29,13 +29,12 @@ results across all the various platforms you support, without
 sacrificing performance. It offers great flexibility to extend and
 customize the supplied services.
 
-%package  -n lib%{name}-devel
+%package  -n libicu-devel
 Summary:  Development files for International Components for Unicode
-Group:    Development/Libraries
-Requires: lib%{name} = %{version}-%{release}
+Requires: libicu = %{version}-%{release}
 Requires: pkgconfig
 
-%description -n lib%{name}-devel
+%description -n libicu-devel
 Includes and definitions for developing with icu.
 
 %prep
@@ -44,8 +43,11 @@ cp %{SOURCE1001} .
 
 %build
 cd source
-%configure ./runConfigureICU Linux --disable-renaming --prefix=%{_prefix}
-make
+%configure --disable-static \
+            --disable-renaming \
+            --enable-shared \
+            --disable-samples
+make %{?_smp_mflags}
 
 %install
 cd source
@@ -57,14 +59,14 @@ chmod +x %{buildroot}/%{_libdir}/lib*.so.*
 %remove_docs
 
 
-%post -n lib%{name} -p /sbin/ldconfig
+%post -n libicu -p /sbin/ldconfig
 
-%postun -n lib%{name} -p /sbin/ldconfig
+%postun -n libicu -p /sbin/ldconfig
 
 %files
 %manifest %{name}.manifest
 
-%files -n lib%{name}
+%files -n libicu
 %manifest %{name}.manifest
 %{_libdir}/*.so*
 %{_bindir}/derb
@@ -79,13 +81,13 @@ chmod +x %{buildroot}/%{_libdir}/lib*.so.*
 %{_bindir}/icuinfo
 %{_bindir}/icu-config
 %{_sbindir}/*
-%dir %{_datadir}/icu/4.8.1.1
-%{_datadir}/icu/4.8.1.1/config/mh-linux
-%{_datadir}/icu/4.8.1.1/install-sh
-%{_datadir}/icu/4.8.1.1/license.html
-%{_datadir}/icu/4.8.1.1/mkinstalldirs
+%dir %{_datadir}/icu/%{version}
+%{_datadir}/icu/%{version}/config/mh-linux
+%{_datadir}/icu/%{version}/install-sh
+%{_datadir}/icu/%{version}/license.html
+%{_datadir}/icu/%{version}/mkinstalldirs
 
-%files -n lib%{name}-devel
+%files -n libicu-devel
 %manifest %{name}.manifest
 %{_includedir}/layout
 %{_includedir}/unicode
