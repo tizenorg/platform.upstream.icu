@@ -5,8 +5,7 @@ Summary:   International Components for Unicode
 Group:      System/Libraries
 License:   ICU
 URL:       http://www.icu-project.org/
-%define tar_version  %(echo %{version} | sed -e "s/\\./\_/g")
-Source0:   icu4c-%{tar_version}-src.tgz
+Source0:   icu4c-4_8_1_1-src.tgz
 Source1001: 	icu.manifest
 BuildRequires: doxygen
 BuildRequires: autoconf
