@@ -52,6 +52,9 @@ make %{?_smp_mflags}
 cd source
 %make_install
 
+mkdir -p %{buildroot}/usr/share/license
+cp LICENSE %{buildroot}/usr/share/license/%{name}
+
 # bugs of rpmdeps
 chmod +x %{buildroot}/%{_libdir}/lib*.so.*
 
@@ -64,6 +67,7 @@ chmod +x %{buildroot}/%{_libdir}/lib*.so.*
 
 %files
 %manifest %{name}.manifest
+/usr/share/license/%{name}
 
 %files -n libicu
 %manifest %{name}.manifest
