@@ -89,11 +89,14 @@ chmod +x %{buildroot}/%{_libdir}/lib*.so.*
 %{_datadir}/icu/%{version}/install-sh
 %{_datadir}/icu/%{version}/license.html
 %{_datadir}/icu/%{version}/mkinstalldirs
+/usr/share/license/%{name}
 
 %files -n libicu-devel
 %manifest %{name}.manifest
+
 %{_includedir}/layout
 %{_includedir}/unicode
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/icu-*.pc
 %{_libdir}/%{name}
+/usr/share/license/%{name}
