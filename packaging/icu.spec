@@ -52,8 +52,11 @@ make %{?_smp_mflags}
 cd source
 %make_install
 
+cd -
 mkdir -p %{buildroot}/usr/share/license
 cp LICENSE %{buildroot}/usr/share/license/%{name}
+cp LICENSE %{buildroot}/usr/share/license/lib%{name}
+cp LICENSE %{buildroot}/usr/share/license/lib%{name}-devel
 
 # bugs of rpmdeps
 chmod +x %{buildroot}/%{_libdir}/lib*.so.*
@@ -89,7 +92,7 @@ chmod +x %{buildroot}/%{_libdir}/lib*.so.*
 %{_datadir}/icu/%{version}/install-sh
 %{_datadir}/icu/%{version}/license.html
 %{_datadir}/icu/%{version}/mkinstalldirs
-/usr/share/license/%{name}
+/usr/share/license/lib%{name}
 
 %files -n libicu-devel
 %manifest %{name}.manifest
@@ -99,4 +102,4 @@ chmod +x %{buildroot}/%{_libdir}/lib*.so.*
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/icu-*.pc
 %{_libdir}/%{name}
-/usr/share/license/%{name}
+/usr/share/license/lib%{name}-devel
