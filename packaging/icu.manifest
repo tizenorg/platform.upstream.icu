@@ -1,5 +1,24 @@
 <manifest>
- <request>
-    <domain name="_"/>
- </request>
+	<request>
+		<domain name="_"/>
+	</request>
+	<assign>
+		<filesystem path="/usr/bin/derb" label="_" exec_label="none" />
+		<filesystem path="/usr/bin/genbrk" label="_" exec_label="none" />
+		<filesystem path="/usr/bin/gencfu" label="_" exec_label="none" />
+		<filesystem path="/usr/bin/gencnval" label="_" exec_label="none" />
+		<filesystem path="/usr/bin/genrb" label="_" exec_label="none" />
+		<filesystem path="/usr/bin/icu-config" label="_" exec_label="none" />
+		<filesystem path="/usr/bin/icuinfo" label="_" exec_label="none" />
+		<filesystem path="/usr/bin/makeconv" label="_" exec_label="none" />
+		<filesystem path="/usr/bin/pkgdata" label="_" exec_label="none" />
+		<filesystem path="/usr/bin/uconv" label="_" exec_label="none" />
+		<filesystem path="/usr/sbin/genccode" label="_" exec_label="none" />
+		<filesystem path="/usr/sbin/gencmn" label="_" exec_label="none" />
+		<filesystem path="/usr/sbin/gennorm2" label="_" exec_label="none" />
+		<filesystem path="/usr/sbin/gensprep" label="_" exec_label="none" />
+		<filesystem path="/usr/sbin/icupkg" label="_" exec_label="none" />
+		<filesystem path="/usr/share/icu/51.1/install-sh" label="_" exec_label="none" />
+		<filesystem path="/usr/share/icu/51.1/mkinstalldirs" label="_" exec_label="none" />
+	</assign>
 </manifest>
