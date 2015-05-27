@@ -1,3 +1,6 @@
+* Wed May 27 2015 Sangyoon Jang <s89.jang@samsung.com> upstream/4.8.1.1-13-gbe44479
+- Fix spec file
+
 * Thu 26 Sep 2013 Karol Lewandowski <k.lewandowsk@samsung.com>
 - hardcode package version due to OBS export not working well with version substitution macros
 
