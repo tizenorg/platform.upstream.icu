@@ -1,11 +1,12 @@
 Name:      icu
-Version:   4.8.1.1
+Version:   51.1
 Release:   1
 Summary:   International Components for Unicode
-Group:      System/Libraries
+Group:     System/Libraries
 License:   ICU
 URL:       http://www.icu-project.org/
-Source0:   icu4c-4_8_1_1-src.tgz
+%define tar_version 51_1
+Source0:   %{name}4c-%{tar_version}-src.tgz
 Source1001: 	icu.manifest
 BuildRequires: doxygen
 BuildRequires: autoconf
@@ -72,7 +73,7 @@ chmod +x %{buildroot}/%{_libdir}/lib*.so.*
 %{_bindir}/genbrk
 %{_bindir}/gencfu
 %{_bindir}/gencnval
-%{_bindir}/genctd
+%{_bindir}/gendict
 %{_bindir}/genrb
 %{_bindir}/makeconv
 %{_bindir}/pkgdata
