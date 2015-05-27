@@ -1,11 +1,11 @@
 /******************************************************************************
- *   Copyright (C) 2009-2010, International Business Machines
+ *   Copyright (C) 2009-2012, International Business Machines
  *   Corporation and others.  All Rights Reserved.
  *******************************************************************************
  */
 #include "unicode/utypes.h"
 
-#ifdef U_WINDOWS
+#if U_PLATFORM_HAS_WIN32_API
 #   define VC_EXTRALEAN
 #   define WIN32_LEAN_AND_MEAN
 #   define NOUSER
@@ -19,7 +19,7 @@
 #   endif
 #endif
 
-#ifdef U_LINUX
+#if U_PLATFORM_IS_LINUX_BASED
 #   define U_ELF
 #endif
 
@@ -51,10 +51,6 @@
 #define HEX_0X 0 /*  0x1234 */
 #define HEX_0H 1 /*  01234h */
 
-#if defined(U_WINDOWS) || defined(U_ELF)
-#define CAN_GENERATE_OBJECTS
-#endif
-
 /* prototypes --------------------------------------------------------------- */
 static void
 getOutFilename(const char *inFilename, const char *destdir, char *outFilename, char *entryName, const char *newSuffix, const char *optFilename);
@@ -65,7 +61,7 @@ write8(FileStream *out, uint8_t byte, uint32_t column);
 static uint32_t
 write32(FileStream *out, uint32_t byte, uint32_t column);
 
-#ifdef OS400
+#if U_PLATFORM == U_PF_OS400
 static uint32_t
 write8str(FileStream *out, uint8_t byte, uint32_t column);
 #endif
@@ -142,6 +138,14 @@ static const struct AssemblyType {
         "\t.section .rodata\n"
         "\t.align 8\n" /* Either align 8 bytes or 2^8 (256) bytes. 8 bytes is needed. */
         "_%s:\n\n",
+
+        ".long ","",HEX_0X
+    },
+    {"gcc-mingw64",
+        ".globl %s\n"
+        "\t.section .rodata\n"
+        "\t.align 8\n" /* Either align 8 bytes or 2^8 (256) bytes. 8 bytes is needed. */
+        "%s:\n\n",
 
         ".long ","",HEX_0X
     },
@@ -359,7 +363,7 @@ writeCCode(const char *filename, const char *destdir, const char *optName, const
         }
     }
 
-#ifdef OS400
+#if U_PLATFORM == U_PF_OS400
     /*
     TODO: Fix this once the compiler implements this feature. Keep in sync with udatamem.c
 
@@ -373,8 +377,11 @@ writeCCode(const char *filename, const char *destdir, const char *optName, const
     [grhoten 4/24/2003]
     */
     sprintf(buffer,
+        "#ifndef IN_GENERATED_CCODE\n"
+        "#define IN_GENERATED_CCODE\n"
         "#define U_DISABLE_RENAMING 1\n"
         "#include \"unicode/umachine.h\"\n"
+        "#endif\n"
         "U_CDECL_BEGIN\n"
         "const struct {\n"
         "    double bogus;\n"
@@ -397,8 +404,11 @@ writeCCode(const char *filename, const char *destdir, const char *optName, const
 #else
     /* Function renaming shouldn't be done in data */
     sprintf(buffer,
+        "#ifndef IN_GENERATED_CCODE\n"
+        "#define IN_GENERATED_CCODE\n"
         "#define U_DISABLE_RENAMING 1\n"
         "#include \"unicode/umachine.h\"\n"
+        "#endif\n"
         "U_CDECL_BEGIN\n"
         "const struct {\n"
         "    double bogus;\n"
@@ -531,7 +541,7 @@ write8(FileStream *out, uint8_t byte, uint32_t column) {
     return column;
 }
 
-#ifdef OS400
+#if U_PLATFORM == U_PF_OS400
 static uint32_t
 write8str(FileStream *out, uint8_t byte, uint32_t column) {
     char s[8];
@@ -628,7 +638,7 @@ getArchitecture(uint16_t *pCPU, uint16_t *pBits, UBool *pIsBigEndian, const char
 #ifdef U_ELF
         Elf32_Ehdr  header32;
         /* Elf32_Ehdr and ELF64_Ehdr are identical for the necessary fields. */
-#elif defined(U_WINDOWS)
+#elif U_PLATFORM_HAS_WIN32_API
         IMAGE_FILE_HEADER header;
 #endif
     } buffer;
@@ -639,7 +649,7 @@ getArchitecture(uint16_t *pCPU, uint16_t *pBits, UBool *pIsBigEndian, const char
 
 #ifdef U_ELF
 
-#elif defined(U_WINDOWS)
+#elif U_PLATFORM_HAS_WIN32_API
     const IMAGE_FILE_HEADER *pHeader;
 #else
 #   error "Unknown platform for CAN_GENERATE_OBJECTS."
@@ -654,7 +664,7 @@ getArchitecture(uint16_t *pCPU, uint16_t *pBits, UBool *pIsBigEndian, const char
         *pCPU=EM_386;
         *pBits=32;
         *pIsBigEndian=(UBool)(U_IS_BIG_ENDIAN ? ELFDATA2MSB : ELFDATA2LSB);
-#elif defined(U_WINDOWS)
+#elif U_PLATFORM_HAS_WIN32_API
 /* _M_IA64 should be defined in windows.h */
 #   if defined(_M_IA64)
         *pCPU=IMAGE_FILE_MACHINE_IA64;
@@ -715,7 +725,7 @@ getArchitecture(uint16_t *pCPU, uint16_t *pBits, UBool *pIsBigEndian, const char
     /* TODO: Support byte swapping */
 
     *pCPU=buffer.header32.e_machine;
-#elif defined(U_WINDOWS)
+#elif U_PLATFORM_HAS_WIN32_API
     if(length<sizeof(IMAGE_FILE_HEADER)) {
         fprintf(stderr, "genccode: match-arch file %s is too short\n", filename);
         exit(U_UNSUPPORTED_ERROR);
@@ -975,7 +985,7 @@ writeObjectCode(const char *filename, const char *destdir, const char *optEntryP
 
     newSuffix=".o";
 
-#elif defined(U_WINDOWS)
+#elif U_PLATFORM_HAS_WIN32_API
     struct {
         IMAGE_FILE_HEADER fileHeader;
         IMAGE_SECTION_HEADER sections[2];
@@ -1001,8 +1011,8 @@ writeObjectCode(const char *filename, const char *destdir, const char *optEntryP
 
     /* deal with options, files and the entry point name */
     getArchitecture(&cpu, &bits, &makeBigEndian, optMatchArch);
-    printf("genccode: --match-arch cpu=%hu bits=%hu big-endian=%hu\n", cpu, bits, makeBigEndian);
-#ifdef U_WINDOWS
+    printf("genccode: --match-arch cpu=%hu bits=%hu big-endian=%d\n", cpu, bits, makeBigEndian);
+#if U_PLATFORM_HAS_WIN32_API
     if(cpu==IMAGE_FILE_MACHINE_I386) {
         entryOffset=1;
     }
@@ -1087,7 +1097,7 @@ writeObjectCode(const char *filename, const char *destdir, const char *optEntryP
     if(paddingSize!=0) {
         T_FileStream_write(out, padding, paddingSize);
     }
-#elif defined(U_WINDOWS)
+#elif U_PLATFORM_HAS_WIN32_API
     /* populate the .obj headers */
     uprv_memset(&objHeader, 0, sizeof(objHeader));
     uprv_memset(&symbols, 0, sizeof(symbols));
@@ -1148,7 +1158,7 @@ writeObjectCode(const char *filename, const char *destdir, const char *optEntryP
         T_FileStream_write(out, buffer, (int32_t)length);
     }
 
-#ifdef U_WINDOWS
+#if U_PLATFORM_HAS_WIN32_API
     /* write the symbol table */
     T_FileStream_write(out, symbols, IMAGE_SIZEOF_SYMBOL);
     T_FileStream_write(out, &symbolNames, symbolNames.sizeofLongNames);
