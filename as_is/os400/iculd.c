@@ -85,6 +85,9 @@ int main(int argc, const char *argv[]) {
       case 'g':
         printf(".. ignoring debugging: %s\n", argv[i]);
         break;
+      case 'l':
+        printf(".. ignoring lib: %s\n", argv[i]);
+        break;
       case 'v':
         printf(".. already verbose\n");
         break;
