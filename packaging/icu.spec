@@ -16,6 +16,8 @@ Tools and utilities for developing with icu.
 
 %package -n libicu
 Summary: International Components for Unicode - libraries
+Provides: libicudata.so.48 libicui18n.so.48 libicuio.so.48 libicuuc.so.48
+Provides: libicutu.so.48 libicutest.so.48 libicule.so.48
 
 %description -n libicu
 The International Components for Unicode (ICU) libraries provide
