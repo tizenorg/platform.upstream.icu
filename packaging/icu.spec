@@ -18,6 +18,8 @@ Tools and utilities for developing with icu.
 Summary: International Components for Unicode - libraries
 Provides: libicudata.so.48 libicui18n.so.48 libicuio.so.48 libicuuc.so.48
 Provides: libicutu.so.48 libicutest.so.48 libicule.so.48
+Provides: libicudata.so.48()(64bit) libicui18n.so.48()(64bit) libicuio.so.48()(64bit) libicuuc.so.48()(64bit)
+Provides: libicutu.so.48()(64bit) libicutest.so.48()(64bit) libicule.so.48()(64bit)
 
 %description -n libicu
 The International Components for Unicode (ICU) libraries provide
@@ -57,6 +59,14 @@ cd source
 
 # bugs of rpmdeps
 chmod +x %{buildroot}/%{_libdir}/lib*.so.*
+
+ln -s %{_libdir}/libicudata.so %{buildroot}/%{_libdir}/libicudata.so.48
+ln -s %{_libdir}/libicui18n.so %{buildroot}/%{_libdir}/libicui18n.so.48
+ln -s %{_libdir}/libicuio.so %{buildroot}/%{_libdir}/libicuio.so.48
+ln -s %{_libdir}/libicuuc.so %{buildroot}/%{_libdir}/libicuuc.so.48
+ln -s %{_libdir}/libicule.so %{buildroot}/%{_libdir}/libicule.so.48
+ln -s %{_libdir}/libicutest.so %{buildroot}/%{_libdir}/libicutest.so.48
+ln -s %{_libdir}/libicutu.so %{buildroot}/%{_libdir}/libicutu.so.48
 
 %remove_docs
 
