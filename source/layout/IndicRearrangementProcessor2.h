@@ -1,6 +1,6 @@
 /*
  *
- * (C) Copyright IBM Corp.  and others 1998-2013 - All Rights Reserved
+ * (C) Copyright IBM Corp.  and others 1998-2014 - All Rights Reserved
  *
  */
 
@@ -27,26 +27,26 @@ class IndicRearrangementProcessor2 : public StateTableProcessor2
 public:
     virtual void beginStateTable();
 
-    virtual le_uint16 processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex2 index);
+    virtual le_uint16 processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex2 index, LEErrorCode &success);
 
     virtual void endStateTable();
 
     void doRearrangementAction(LEGlyphStorage &glyphStorage, IndicRearrangementVerb verb) const;
 
-    IndicRearrangementProcessor2(const MorphSubtableHeader2 *morphSubtableHeader);
+    IndicRearrangementProcessor2(const LEReferenceTo<MorphSubtableHeader2> &morphSubtableHeader, LEErrorCode &success);
     virtual ~IndicRearrangementProcessor2();
 
     /**
      * ICU "poor man's RTTI", returns a UClassID for the actual class.
      *
-     * @stable ICU 2.8
+     * @deprecated ICU 54. See {@link icu::LayoutEngine}
      */
     virtual UClassID getDynamicClassID() const;
 
     /**
      * ICU "poor man's RTTI", returns a UClassID for this class.
      *
-     * @stable ICU 2.8
+     * @deprecated ICU 54. See {@link icu::LayoutEngine}
      */
     static UClassID getStaticClassID();
 
@@ -54,8 +54,8 @@ protected:
     le_int32 firstGlyph;
     le_int32 lastGlyph;
 
-    const IndicRearrangementStateEntry2 *entryTable;
-    const IndicRearrangementSubtableHeader2 *indicRearrangementSubtableHeader;
+    LEReferenceToArrayOf<IndicRearrangementStateEntry2> entryTable;
+    LEReferenceTo<IndicRearrangementSubtableHeader2> indicRearrangementSubtableHeader;
 
 };
 

@@ -1,6 +1,6 @@
 /*
 *******************************************************************************
-* Copyright (C) 2007-2013, International Business Machines Corporation and    *
+* Copyright (C) 2007-2014, International Business Machines Corporation and    *
 * others. All Rights Reserved.                                                *
 *******************************************************************************
 */
@@ -22,6 +22,8 @@ class TimeZoneFormatTest : public IntlTest {
     void TestTimeRoundTrip(void);
     void TestParse(void);
     void TestISOFormat(void);
+    void TestFormat(void);
+    void TestFormatTZDBNames(void);
 };
 
 #endif /* #if !UCONFIG_NO_FORMATTING */
