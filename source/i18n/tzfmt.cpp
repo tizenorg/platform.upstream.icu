@@ -1,7 +1,7 @@
 /*
 *******************************************************************************
-* Copyright (C) 2011-2013, International Business Machines Corporation and    *
-* others. All Rights Reserved.                                                *
+* Copyright (C) 2011-2014, International Business Machines Corporation and
+* others. All Rights Reserved.
 *******************************************************************************
 */
 
@@ -136,10 +136,10 @@ static const int32_t ALL_GENERIC_NAME_TYPES = UTZGNM_LOCATION | UTZGNM_LONG | UT
 
 // Time Zone ID/Short ID trie
 static TextTrieMap *gZoneIdTrie = NULL;
-static UBool gZoneIdTrieInitialized = FALSE;
+static icu::UInitOnce gZoneIdTrieInitOnce = U_INITONCE_INITIALIZER;
 
 static TextTrieMap *gShortZoneIdTrie = NULL;
-static UBool gShortZoneIdTrieInitialized = FALSE;
+static icu::UInitOnce gShortZoneIdTrieInitOnce = U_INITONCE_INITIALIZER;
 
 static UMutex gLock = U_MUTEX_INITIALIZER;
 
@@ -153,13 +153,13 @@ static UBool U_CALLCONV tzfmt_cleanup(void)
         delete gZoneIdTrie;
     }
     gZoneIdTrie = NULL;
-    gZoneIdTrieInitialized = FALSE;
+    gZoneIdTrieInitOnce.reset();
 
     if (gShortZoneIdTrie != NULL) {
         delete gShortZoneIdTrie;
     }
     gShortZoneIdTrie = NULL;
-    gShortZoneIdTrieInitialized = FALSE;
+    gShortZoneIdTrieInitOnce.reset();
 
     return TRUE;
 }
@@ -308,7 +308,8 @@ U_CDECL_END
 UOBJECT_DEFINE_RTTI_IMPLEMENTATION(TimeZoneFormat)
 
 TimeZoneFormat::TimeZoneFormat(const Locale& locale, UErrorCode& status) 
-: fLocale(locale), fTimeZoneNames(NULL), fTimeZoneGenericNames(NULL), fDefParseOptionFlags(0) {
+: fLocale(locale), fTimeZoneNames(NULL), fTimeZoneGenericNames(NULL),
+  fDefParseOptionFlags(0), fTZDBTimeZoneNames(NULL) {
 
     for (int32_t i = 0; i < UTZFMT_PAT_COUNT; i++) {
         fGMTOffsetPatternItems[i] = NULL;
@@ -418,6 +419,7 @@ TimeZoneFormat::TimeZoneFormat(const TimeZoneFormat& other)
 TimeZoneFormat::~TimeZoneFormat() {
     delete fTimeZoneNames;
     delete fTimeZoneGenericNames;
+    delete fTZDBTimeZoneNames;
     for (int32_t i = 0; i < UTZFMT_PAT_COUNT; i++) {
         delete fGMTOffsetPatternItems[i];
     }
@@ -438,6 +440,7 @@ TimeZoneFormat::operator=(const TimeZoneFormat& other) {
 
     fTimeZoneNames = other.fTimeZoneNames->clone();
     if (other.fTimeZoneGenericNames) {
+        // TODO: this test has dubious thread safety.
         fTimeZoneGenericNames = other.fTimeZoneGenericNames->clone();
     }
 
@@ -638,6 +641,9 @@ TimeZoneFormat::format(UTimeZoneFormatStyle style, const TimeZone& tz, UDate dat
     if (timeType) {
         *timeType = UTZFMT_TIME_TYPE_UNKNOWN;
     }
+
+    UBool noOffsetFormatFallback = FALSE;
+
     switch (style) {
     case UTZFMT_STYLE_GENERIC_LOCATION:
         formatGeneric(tz, UTZGNM_LOCATION, date, name);
@@ -654,12 +660,33 @@ TimeZoneFormat::format(UTimeZoneFormatStyle style, const TimeZone& tz, UDate dat
     case UTZFMT_STYLE_SPECIFIC_SHORT:
         formatSpecific(tz, UTZNM_SHORT_STANDARD, UTZNM_SHORT_DAYLIGHT, date, name, timeType);
         break;
+
+    case UTZFMT_STYLE_ZONE_ID:
+        tz.getID(name);
+        noOffsetFormatFallback = TRUE;
+        break;
+    case UTZFMT_STYLE_ZONE_ID_SHORT:
+        {
+            const UChar* shortID = ZoneMeta::getShortID(tz);
+            if (shortID == NULL) {
+                shortID = UNKNOWN_SHORT_ZONE_ID;
+            }
+            name.setTo(shortID, -1);
+        }
+        noOffsetFormatFallback = TRUE;
+        break;
+
+    case UTZFMT_STYLE_EXEMPLAR_LOCATION:
+        formatExemplarLocation(tz, name);
+        noOffsetFormatFallback = TRUE;
+        break;
+
     default:
         // will be handled below
         break;
     }
 
-    if (name.isEmpty()) {
+    if (name.isEmpty() && !noOffsetFormatFallback) {
         UErrorCode status = U_ZERO_ERROR;
         int32_t rawOffset, dstOffset;
         tz.getOffset(date, FALSE, rawOffset, dstOffset, status);
@@ -719,24 +746,11 @@ TimeZoneFormat::format(UTimeZoneFormatStyle style, const TimeZone& tz, UDate dat
                 formatOffsetISO8601Extended(offset, FALSE, FALSE, FALSE, name, status);
                 break;
 
-            case UTZFMT_STYLE_ZONE_ID:
-                tz.getID(name);
-                break;
-
-            case UTZFMT_STYLE_ZONE_ID_SHORT:
-                {
-                    const UChar* shortID = ZoneMeta::getShortID(tz);
-                    if (shortID == NULL) {
-                        shortID = UNKNOWN_SHORT_ZONE_ID;
-                    }
-                    name.setTo(shortID, -1);
-                }
-                break;
-
-            case UTZFMT_STYLE_EXEMPLAR_LOCATION:
-                formatExemplarLocation(tz, name);
-                break;
+            default:
+              // UTZFMT_STYLE_ZONE_ID, UTZFMT_STYLE_ZONE_ID_SHORT, UTZFMT_STYLE_EXEMPLAR_LOCATION
+              break;
             }
+
             if (timeType) {
                 *timeType = (dstOffset != 0) ? UTZFMT_TIME_TYPE_DAYLIGHT : UTZFMT_TIME_TYPE_STANDARD;
             }
@@ -833,6 +847,8 @@ TimeZoneFormat::parse(UTimeZoneFormatStyle style, const UnicodeString& text, Par
 
     UErrorCode status = U_ZERO_ERROR;
     UnicodeString tzID;
+
+    UBool parseTZDBAbbrev = ((parseOptions & UTZFMT_PARSE_OPTION_TZ_DATABASE_ABBREVIATIONS) != 0);
 
     // Try the specified style
     switch (style) {
@@ -942,6 +958,41 @@ TimeZoneFormat::parse(UTimeZoneFormatStyle style, const UnicodeString& text, Par
                     getTimeZoneID(specificMatches.getAlias(), matchIdx, tzID);
                     U_ASSERT(!tzID.isEmpty());
                     return TimeZone::createTimeZone(tzID);
+                }
+            }
+
+            if (parseTZDBAbbrev && style == UTZFMT_STYLE_SPECIFIC_SHORT) {
+                U_ASSERT((nameTypes & UTZNM_SHORT_STANDARD) != 0);
+                U_ASSERT((nameTypes & UTZNM_SHORT_DAYLIGHT) != 0);
+
+                const TZDBTimeZoneNames *tzdbTimeZoneNames = getTZDBTimeZoneNames(status);
+                if (U_SUCCESS(status)) {
+                    LocalPointer<TimeZoneNames::MatchInfoCollection> tzdbNameMatches(
+                        tzdbTimeZoneNames->find(text, startIdx, nameTypes, status));
+                    if (U_FAILURE(status)) {
+                        pos.setErrorIndex(startIdx);
+                        return NULL;
+                    }
+                    if (!tzdbNameMatches.isNull()) {
+                        int32_t matchIdx = -1;
+                        int32_t matchPos = -1;
+                        for (int32_t i = 0; i < tzdbNameMatches->size(); i++) {
+                            matchPos = startIdx + tzdbNameMatches->getMatchLengthAt(i);
+                            if (matchPos > parsedPos) {
+                                matchIdx = i;
+                                parsedPos = matchPos;
+                            }
+                        }
+                        if (matchIdx >= 0) {
+                            if (timeType) {
+                                *timeType = getTimeType(tzdbNameMatches->getNameTypeAt(matchIdx));
+                            }
+                            pos.setIndex(matchPos);
+                            getTimeZoneID(tzdbNameMatches.getAlias(), matchIdx, tzID);
+                            U_ASSERT(!tzID.isEmpty());
+                            return TimeZone::createTimeZone(tzID);
+                        }
+                    }
                 }
             }
             break;
@@ -1156,6 +1207,34 @@ TimeZoneFormat::parse(UTimeZoneFormatStyle style, const UnicodeString& text, Par
                 parsedOffset = UNKNOWN_OFFSET;
             }
         }
+        if (parseTZDBAbbrev && parsedPos < maxPos && (evaluated & STYLE_PARSE_FLAGS[UTZFMT_STYLE_SPECIFIC_SHORT]) == 0) {
+            const TZDBTimeZoneNames *tzdbTimeZoneNames = getTZDBTimeZoneNames(status);
+            if (U_SUCCESS(status)) {
+                LocalPointer<TimeZoneNames::MatchInfoCollection> tzdbNameMatches(
+                    tzdbTimeZoneNames->find(text, startIdx, ALL_SIMPLE_NAME_TYPES, status));
+                if (U_FAILURE(status)) {
+                    pos.setErrorIndex(startIdx);
+                    return NULL;
+                }
+                int32_t tzdbNameMatchIdx = -1;
+                int32_t matchPos = -1;
+                if (!tzdbNameMatches.isNull()) {
+                    for (int32_t i = 0; i < tzdbNameMatches->size(); i++) {
+                        if (startIdx + tzdbNameMatches->getMatchLengthAt(i) > matchPos) {
+                            tzdbNameMatchIdx = i;
+                            matchPos = startIdx + tzdbNameMatches->getMatchLengthAt(i);
+                        }
+                    }
+                }
+                if (parsedPos < matchPos) {
+                    U_ASSERT(tzdbNameMatchIdx >= 0);
+                    parsedPos = matchPos;
+                    getTimeZoneID(tzdbNameMatches.getAlias(), tzdbNameMatchIdx, parsedID);
+                    parsedTimeType = getTimeType(tzdbNameMatches->getNameTypeAt(tzdbNameMatchIdx));
+                    parsedOffset = UNKNOWN_OFFSET;
+                }
+            }
+        }
         // Try generic names
         if (parsedPos < maxPos) {
             int32_t genMatchLen = -1;
@@ -1170,7 +1249,7 @@ TimeZoneFormat::parse(UTimeZoneFormatStyle style, const UnicodeString& text, Par
                 return NULL;
             }
 
-            if (parsedPos < startIdx + genMatchLen) {
+            if (genMatchLen > 0 && parsedPos < startIdx + genMatchLen) {
                 parsedPos = startIdx + genMatchLen;
                 parsedID.setTo(tzID);
                 parsedTimeType = tt;
@@ -1291,20 +1370,35 @@ TimeZoneFormat::getTimeZoneGenericNames(UErrorCode& status) const {
         return NULL;
     }
 
-    UBool create;
-    UMTX_CHECK(&gZoneMetaLock, (fTimeZoneGenericNames == NULL), create);
-    if (create) {
+    umtx_lock(&gLock);
+    if (fTimeZoneGenericNames == NULL) {
         TimeZoneFormat *nonConstThis = const_cast<TimeZoneFormat *>(this);
-        umtx_lock(&gLock);
-        {
-            if (fTimeZoneGenericNames == NULL) {
-                nonConstThis->fTimeZoneGenericNames = TimeZoneGenericNames::createInstance(fLocale, status);
-            }
-        }
-        umtx_unlock(&gLock);
+        nonConstThis->fTimeZoneGenericNames = TimeZoneGenericNames::createInstance(fLocale, status);
     }
+    umtx_unlock(&gLock);
 
     return fTimeZoneGenericNames;
+}
+
+const TZDBTimeZoneNames*
+TimeZoneFormat::getTZDBTimeZoneNames(UErrorCode& status) const {
+    if (U_FAILURE(status)) {
+        return NULL;
+    }
+
+    umtx_lock(&gLock);
+    if (fTZDBTimeZoneNames == NULL) {
+        TZDBTimeZoneNames *tzdbNames = new TZDBTimeZoneNames(fLocale);
+        if (tzdbNames == NULL) {
+            status = U_MEMORY_ALLOCATION_ERROR;
+        } else {
+            TimeZoneFormat *nonConstThis = const_cast<TimeZoneFormat *>(this);
+            nonConstThis->fTZDBTimeZoneNames = tzdbNames;
+        }
+    }
+    umtx_unlock(&gLock);
+
+    return fTZDBTimeZoneNames;
 }
 
 UnicodeString&
@@ -1748,7 +1842,7 @@ TimeZoneFormat::parseOffsetFieldsWithPattern(const UnicodeString& text, int32_t 
     int32_t idx = start;
 
     for (int32_t i = 0; i < patternItems->size(); i++) {
-        int32_t len;
+        int32_t len = 0;
         const GMTOffsetField* field = (const GMTOffsetField*)patternItems->elementAt(i);
         GMTOffsetField::FieldType fieldType = field->getType();
         if (fieldType == GMTOffsetField::TEXT) {
@@ -2570,9 +2664,8 @@ TimeZoneFormat::getTimeType(UTimeZoneNameType nameType) {
         return UTZFMT_TIME_TYPE_DAYLIGHT;
 
     default:
-        U_ASSERT(FALSE);
+        return UTZFMT_TIME_TYPE_UNKNOWN;
     }
-    return UTZFMT_TIME_TYPE_UNKNOWN;
 }
 
 UnicodeString&
@@ -2634,44 +2727,37 @@ ZoneIdMatchHandler::getMatchLen() {
     return fLen;
 }
 
+
+static void U_CALLCONV initZoneIdTrie(UErrorCode &status) {
+    U_ASSERT(gZoneIdTrie == NULL);
+    ucln_i18n_registerCleanup(UCLN_I18N_TIMEZONEFORMAT, tzfmt_cleanup);
+    gZoneIdTrie = new TextTrieMap(TRUE, NULL);    // No deleter, because values are pooled by ZoneMeta
+    if (gZoneIdTrie == NULL) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return;
+    }
+    StringEnumeration *tzenum = TimeZone::createEnumeration();
+    const UnicodeString *id;
+    while ((id = tzenum->snext(status))) {
+        const UChar* uid = ZoneMeta::findTimeZoneID(*id);
+        if (uid) {
+            gZoneIdTrie->put(uid, const_cast<UChar *>(uid), status);
+        }
+    }
+    delete tzenum;
+}
+
+
 UnicodeString&
 TimeZoneFormat::parseZoneID(const UnicodeString& text, ParsePosition& pos, UnicodeString& tzID) const {
     UErrorCode status = U_ZERO_ERROR;
-    UBool initialized;
-    UMTX_CHECK(&gLock, gZoneIdTrieInitialized, initialized);
-    if (!initialized) {
-        umtx_lock(&gLock);
-        {
-            if (!gZoneIdTrieInitialized) {
-                StringEnumeration *tzenum = TimeZone::createEnumeration();
-                TextTrieMap* trie = new TextTrieMap(TRUE, NULL);    // No deleter, because values are pooled by ZoneMeta
-                if (trie) {
-                    const UnicodeString *id;
-                    while ((id = tzenum->snext(status))) {
-                        const UChar* uid = ZoneMeta::findTimeZoneID(*id);
-                        if (uid) {
-                            trie->put(uid, const_cast<UChar *>(uid), status);
-                        }
-                    }
-                    if (U_SUCCESS(status)) {
-                        gZoneIdTrie = trie;
-                        gZoneIdTrieInitialized = initialized = TRUE;
-                        ucln_i18n_registerCleanup(UCLN_I18N_TIMEZONEFORMAT, tzfmt_cleanup);
-                    } else {
-                        delete trie;
-                    }
-                }
-                delete tzenum;
-            }
-        }
-        umtx_unlock(&gLock);
-    }
+    umtx_initOnce(gZoneIdTrieInitOnce, &initZoneIdTrie, status);
 
     int32_t start = pos.getIndex();
     int32_t len = 0;
     tzID.setToBogus();
 
-    if (initialized) {
+    if (U_SUCCESS(status)) {
         LocalPointer<ZoneIdMatchHandler> handler(new ZoneIdMatchHandler());
         gZoneIdTrie->search(text, start, handler.getAlias(), status); 
         len = handler->getMatchLen();
@@ -2689,47 +2775,39 @@ TimeZoneFormat::parseZoneID(const UnicodeString& text, ParsePosition& pos, Unico
     return tzID;
 }
 
+static void U_CALLCONV initShortZoneIdTrie(UErrorCode &status) {
+    U_ASSERT(gShortZoneIdTrie == NULL);
+    ucln_i18n_registerCleanup(UCLN_I18N_TIMEZONEFORMAT, tzfmt_cleanup);
+    StringEnumeration *tzenum = TimeZone::createTimeZoneIDEnumeration(UCAL_ZONE_TYPE_CANONICAL, NULL, NULL, status);
+    if (U_SUCCESS(status)) {
+        gShortZoneIdTrie = new TextTrieMap(TRUE, NULL);    // No deleter, because values are pooled by ZoneMeta
+        if (gShortZoneIdTrie == NULL) {
+            status = U_MEMORY_ALLOCATION_ERROR;
+        } else {
+            const UnicodeString *id;
+            while ((id = tzenum->snext(status))) {
+                const UChar* uID = ZoneMeta::findTimeZoneID(*id);
+                const UChar* shortID = ZoneMeta::getShortID(*id);
+                if (shortID && uID) {
+                    gShortZoneIdTrie->put(shortID, const_cast<UChar *>(uID), status);
+                }
+            }
+        }
+    }
+    delete tzenum;
+}
+
+
 UnicodeString&
 TimeZoneFormat::parseShortZoneID(const UnicodeString& text, ParsePosition& pos, UnicodeString& tzID) const {
     UErrorCode status = U_ZERO_ERROR;
-    UBool initialized;
-    UMTX_CHECK(&gLock, gShortZoneIdTrieInitialized, initialized);
-    if (!initialized) {
-        umtx_lock(&gLock);
-        {
-            if (!gShortZoneIdTrieInitialized) {
-                StringEnumeration *tzenum = TimeZone::createTimeZoneIDEnumeration(UCAL_ZONE_TYPE_CANONICAL, NULL, NULL, status);
-                if (U_SUCCESS(status)) {
-                    TextTrieMap* trie = new TextTrieMap(TRUE, NULL);    // No deleter, because values are pooled by ZoneMeta
-                    if (trie) {
-                        const UnicodeString *id;
-                        while ((id = tzenum->snext(status))) {
-                            const UChar* uID = ZoneMeta::findTimeZoneID(*id);
-                            const UChar* shortID = ZoneMeta::getShortID(*id);
-                            if (shortID && uID) {
-                                trie->put(shortID, const_cast<UChar *>(uID), status);
-                            }
-                        }
-                        if (U_SUCCESS(status)) {
-                            gShortZoneIdTrie = trie;
-                            gShortZoneIdTrieInitialized = initialized = TRUE;
-                            ucln_i18n_registerCleanup(UCLN_I18N_TIMEZONEFORMAT, tzfmt_cleanup);
-                        } else {
-                            delete trie;
-                        }
-                    }
-                }
-                delete tzenum;
-            }
-        }
-        umtx_unlock(&gLock);
-    }
+    umtx_initOnce(gShortZoneIdTrieInitOnce, &initShortZoneIdTrie, status);
 
     int32_t start = pos.getIndex();
     int32_t len = 0;
     tzID.setToBogus();
 
-    if (initialized) {
+    if (U_SUCCESS(status)) {
         LocalPointer<ZoneIdMatchHandler> handler(new ZoneIdMatchHandler());
         gShortZoneIdTrie->search(text, start, handler.getAlias(), status); 
         len = handler->getMatchLen();

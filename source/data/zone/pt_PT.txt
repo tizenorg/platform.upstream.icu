@@ -1,13 +1,13 @@
 ﻿// ***************************************************************************
 // *
-// * Copyright (C) 2013 International Business Machines
+// * Copyright (C) 2014 International Business Machines
 // * Corporation and others. All Rights Reserved.
 // * Tool: org.unicode.cldr.icu.NewLdml2IcuConverter
 // * Source File: <path>/common/main/pt_PT.xml
 // *
 // ***************************************************************************
 pt_PT{
-    Version{"2.0.82.51"}
+    Version{"2.1.8.19"}
     zoneStrings{
         "Africa:Djibouti"{
             ec{"Jibuti"}
@@ -15,8 +15,23 @@ pt_PT{
         "Africa:Johannesburg"{
             ec{"Joanesburgo"}
         }
+        "Africa:Nairobi"{
+            ec{"Nairobi"}
+        }
+        "Africa:Porto-Novo"{
+            ec{"Porto-Novo"}
+        }
+        "Africa:Tripoli"{
+            ec{"Tripoli"}
+        }
         "Africa:Tunis"{
             ec{"Tunes"}
+        }
+        "America:Anguilla"{
+            ec{"Anguila"}
+        }
+        "America:Araguaina"{
+            ec{"Araguaina"}
         }
         "America:Argentina:Tucuman"{
             ec{"Tucumán"}
@@ -30,11 +45,23 @@ pt_PT{
         "America:Cayman"{
             ec{"Caimão"}
         }
+        "America:Curacao"{
+            ec{"Curaçau"}
+        }
+        "America:Dominica"{
+            ec{"Domínica"}
+        }
+        "America:Monterrey"{
+            ec{"Monterrey"}
+        }
         "America:Montevideo"{
             ec{"Montevideu"}
         }
+        "America:New_York"{
+            ec{"Nova Iorque"}
+        }
         "America:North_Dakota:Center"{
-            ec{"Center"}
+            ec{"Center, Dakota do Norte"}
         }
         "America:Port-au-Prince"{
             ec{"Port-au-Prince"}
@@ -42,8 +69,11 @@ pt_PT{
         "America:Port_of_Spain"{
             ec{"Porto de Espanha"}
         }
-        "America:St_Johns"{
-            ec{"St. John’s"}
+        "Antarctica:Syowa"{
+            ec{"Syowa"}
+        }
+        "Asia:Aqtobe"{
+            ec{"Aqtobe"}
         }
         "Asia:Baghdad"{
             ec{"Bagdade"}
@@ -51,20 +81,35 @@ pt_PT{
         "Asia:Bahrain"{
             ec{"Barém"}
         }
+        "Asia:Bangkok"{
+            ec{"Banguecoque"}
+        }
+        "Asia:Calcutta"{
+            ec{"Calcutá"}
+        }
         "Asia:Dhaka"{
             ec{"Daca"}
+        }
+        "Asia:Kabul"{
+            ec{"Cabul"}
+        }
+        "Asia:Kuala_Lumpur"{
+            ec{"Kuala Lumpur"}
         }
         "Asia:Riyadh"{
             ec{"Riade"}
         }
-        "Asia:Sakhalin"{
-            ec{"Sacalina"}
+        "Asia:Saigon"{
+            ec{"Cidade de Ho Chi Minh"}
+        }
+        "Asia:Singapore"{
+            ec{"Singapura"}
+        }
+        "Asia:Taipei"{
+            ec{"Taipé"}
         }
         "Asia:Tehran"{
             ec{"Teerão"}
-        }
-        "Asia:Ulaanbaatar"{
-            ec{"Ulan Bator"}
         }
         "Asia:Yerevan"{
             ec{"Erevan"}
@@ -72,17 +117,32 @@ pt_PT{
         "Atlantic:Faeroe"{
             ec{"Faroé"}
         }
-        "Etc:Unknown"{
-            ec{"Desconhecido"}
+        "Atlantic:Reykjavik"{
+            ec{"Reiquiavique"}
+        }
+        "Australia:Lord_Howe"{
+            ec{"Ilha de Lord Howe"}
         }
         "Europe:Amsterdam"{
             ec{"Amesterdão"}
         }
+        "Europe:Busingen"{
+            ec{"Busingen"}
+        }
         "Europe:Copenhagen"{
             ec{"Copenhaga"}
         }
+        "Europe:Dublin"{
+            ld{"Hora de Verão da Irlanda"}
+        }
         "Europe:Helsinki"{
             ec{"Helsínquia"}
+        }
+        "Europe:Kaliningrad"{
+            ec{"Caliningrado"}
+        }
+        "Europe:London"{
+            ld{"Hora de Verão Britânica"}
         }
         "Europe:Madrid"{
             ec{"Madrid"}
@@ -93,8 +153,35 @@ pt_PT{
         "Europe:Moscow"{
             ec{"Moscovo"}
         }
+        "Europe:Podgorica"{
+            ec{"Podgorica"}
+        }
+        "Europe:San_Marino"{
+            ec{"São Marino"}
+        }
+        "Indian:Christmas"{
+            ec{"Ilha do Natal"}
+        }
+        "Indian:Cocos"{
+            ec{"Ilhas Cocos"}
+        }
+        "Indian:Mahe"{
+            ec{"Mahe"}
+        }
         "Indian:Mauritius"{
             ec{"Maurícia"}
+        }
+        "Pacific:Easter"{
+            ec{"Ilha da Páscoa"}
+        }
+        "Pacific:Efate"{
+            ec{"Efate"}
+        }
+        "Pacific:Pitcairn"{
+            ec{"Ilhas Pitcairn"}
+        }
+        "Pacific:Tarawa"{
+            ec{"Tarawa"}
         }
         "meta:Acre"{
             ld{"Hora de Verão do Acre"}
@@ -114,7 +201,7 @@ pt_PT{
             ls{"Hora da África Oriental"}
         }
         "meta:Africa_Southern"{
-            ls{"Hora Padrão da África do Sul"}
+            ls{"Hora da África do Sul"}
         }
         "meta:Africa_Western"{
             ld{"Hora de Verão da África Ocidental"}
@@ -233,9 +320,9 @@ pt_PT{
             ss{"AZOT"}
         }
         "meta:Bangladesh"{
-            ld{"Hora de Verão do Bangladeche"}
-            lg{"Hora do Bangladeche"}
-            ls{"Hora Padrão do Bangladeche"}
+            ld{"Hora de Verão do Bangladesh"}
+            lg{"Hora do Bangladesh"}
+            ls{"Hora Padrão do Bangladesh"}
         }
         "meta:Bhutan"{
             ls{"Hora do Butão"}
@@ -307,7 +394,7 @@ pt_PT{
             ls{"Hora de Davis"}
         }
         "meta:DumontDUrville"{
-            ls{"Hora de Dumont-d'Urville"}
+            ls{"Hora de Dumont-d’Urville"}
         }
         "meta:East_Timor"{
             ls{"Hora de Timor Leste"}
@@ -329,12 +416,15 @@ pt_PT{
             ss{"CET"}
         }
         "meta:Europe_Eastern"{
-            ld{"Hora de Verão da Europa de Leste"}
-            lg{"Hora da Europa de Leste"}
-            ls{"Hora Padrão da Europa de Leste"}
+            ld{"Hora de Verão da Europa Oriental"}
+            lg{"Hora da Europa Oriental"}
+            ls{"Hora Padrão da Europa Oriental"}
             sd{"EEST"}
             sg{"EET"}
             ss{"EET"}
+        }
+        "meta:Europe_Further_Eastern"{
+            ls{"Hora do Extremo Leste da Europa"}
         }
         "meta:Europe_Western"{
             ld{"Hora de Verão da Europa Ocidental"}
@@ -358,7 +448,7 @@ pt_PT{
             ls{"Hora da Guiana Francesa"}
         }
         "meta:French_Southern"{
-            ls{"Hora das Terras Austrais e Antártidas Francesas"}
+            ls{"Hora das Terras Austrais e Antárcticas Francesas"}
         }
         "meta:GMT"{
             ls{"Hora de Greenwich"}
@@ -397,9 +487,9 @@ pt_PT{
             ls{"Hora da Guiana"}
         }
         "meta:Hawaii_Aleutian"{
-            ld{"Hora de Verão do Havai e Aleútes"}
+            ld{"Hora de Verão do Havai e Aleutas"}
             lg{"Hora do Havai e Aleutas"}
-            ls{"Hora Padrão do Havai e Aleútes"}
+            ls{"Hora Padrão do Havai e Aleutas"}
         }
         "meta:Hong_Kong"{
             ld{"Hora de Verão de Hong Kong"}
@@ -470,7 +560,7 @@ pt_PT{
         }
         "meta:Krasnoyarsk"{
             ld{"Hora de Verão de Krasnoyarsk"}
-            lg{"Hora de Krasnoiarsk"}
+            lg{"Hora de Krasnoyarsk"}
             ls{"Hora Padrão de Krasnoyarsk"}
         }
         "meta:Kyrgystan"{
@@ -513,12 +603,22 @@ pt_PT{
             ls{"Hora das Ilhas Marshall"}
         }
         "meta:Mauritius"{
-            ld{"Hora de Verão das Maurícias"}
-            lg{"Hora das Maurícias"}
-            ls{"Hora Padrão das Maurícias"}
+            ld{"Hora de Verão da Maurícia"}
+            lg{"Hora da Maurícia"}
+            ls{"Hora Padrão da Maurícia"}
         }
         "meta:Mawson"{
             ls{"Hora de Mawson"}
+        }
+        "meta:Mexico_Northwest"{
+            ld{"Hora de Verão do Noroeste do México"}
+            lg{"Hora do Noroeste do México"}
+            ls{"Hora Padrão do Noroeste do México"}
+        }
+        "meta:Mexico_Pacific"{
+            ld{"Hora de Verão do Pacífico Mexicano"}
+            lg{"Hora do Pacífico Mexicano"}
+            ls{"Hora Padrão do Pacífico Mexicano"}
         }
         "meta:Mongolia"{
             ld{"Hora de Verão de Ulan Bator"}
@@ -558,7 +658,7 @@ pt_PT{
             ls{"Hora de Niue"}
         }
         "meta:Norfolk"{
-            ls{"Hora das Ilhas Norfolk"}
+            ls{"Hora da Ilha Norfolk"}
         }
         "meta:Noronha"{
             ld{"Hora de Verão de Fernando de Noronha"}
@@ -640,6 +740,8 @@ pt_PT{
             ls{"Hora Padrão de Samara"}
         }
         "meta:Samoa"{
+            ld{"Hora de Verão de Samoa"}
+            lg{"Hora de Samoa"}
             ls{"Hora Padrão de Samoa"}
         }
         "meta:Seychelles"{
@@ -653,6 +755,9 @@ pt_PT{
         }
         "meta:South_Georgia"{
             ls{"Hora da Geórgia do Sul"}
+        }
+        "meta:Suriname"{
+            ls{"Hora do Suriname"}
         }
         "meta:Syowa"{
             ls{"Hora de Syowa"}
@@ -734,11 +839,8 @@ pt_PT{
             lg{"Hora de Ecaterimburgo"}
             ls{"Hora Padrão de Ecaterimburgo"}
         }
-        fallbackFormat{"{1} ({0})"}
-        fallbackRegionFormat{"Hora de {1} ({0})"}
-        gmtFormat{"GMT{0}"}
-        gmtZeroFormat{"GMT"}
-        hourFormat{"+HH:mm;-HH:mm"}
         regionFormat{"Hora de {0}"}
+        regionFormatDaylight{"Hora de Verão de {0}"}
+        regionFormatStandard{"Hora padrão de {0}"}
     }
 }
