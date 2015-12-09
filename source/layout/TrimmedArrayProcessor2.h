@@ -1,6 +1,6 @@
 /*
  *
- * (C) Copyright IBM Corp.  and others 1998-2013 - All Rights Reserved
+ * (C) Copyright IBM Corp.  and others 1998-2014 - All Rights Reserved
  *
  */
 
@@ -25,23 +25,23 @@ class LEGlyphStorage;
 class TrimmedArrayProcessor2 : public NonContextualGlyphSubstitutionProcessor2
 {
 public:
-    virtual void process(LEGlyphStorage &glyphStorage);
+    virtual void process(LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
-    TrimmedArrayProcessor2(const MorphSubtableHeader2 *morphSubtableHeader);
+    TrimmedArrayProcessor2(const LEReferenceTo<MorphSubtableHeader2> &morphSubtableHeader, LEErrorCode &success);
 
     virtual ~TrimmedArrayProcessor2();
 
     /**
      * ICU "poor man's RTTI", returns a UClassID for the actual class.
      *
-     * @stable ICU 2.8
+     * @deprecated ICU 54. See {@link icu::LayoutEngine}
      */
     virtual UClassID getDynamicClassID() const;
 
     /**
      * ICU "poor man's RTTI", returns a UClassID for this class.
      *
-     * @stable ICU 2.8
+     * @deprecated ICU 54. See {@link icu::LayoutEngine}
      */
     static UClassID getStaticClassID();
 
@@ -51,8 +51,8 @@ private:
 protected:
     TTGlyphID firstGlyph;
     TTGlyphID lastGlyph;
-    const TrimmedArrayLookupTable *trimmedArrayLookupTable;
-
+    LEReferenceTo<TrimmedArrayLookupTable> trimmedArrayLookupTable;
+    LEReferenceToArrayOf<LookupValue> valueArray;
 };
 
 U_NAMESPACE_END

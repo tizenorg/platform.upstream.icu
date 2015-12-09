@@ -1,6 +1,6 @@
 /*
 **********************************************************************
-*   Copyright (C) 1997-2013, International Business Machines
+*   Copyright (C) 1997-2014, International Business Machines
 *   Corporation and others.  All Rights Reserved.
 **********************************************************************
 *
@@ -38,7 +38,6 @@
 #include "umutex.h"
 #include "cstring.h"
 #include "cmemory.h"
-#include "ucln_cmn.h"
 #include "locmap.h"
 #include "uarrsort.h"
 #include "uenumimp.h"
@@ -93,7 +92,7 @@ locale_getKeywords(const char *localeID,
  * The range qaa-qtz is reserved for local use
  */
 /* Generated using org.unicode.cldr.icu.GenerateISO639LanguageTables */
-/* ISO639 table version is 20130123 */
+/* ISO639 table version is 20130531 */
 static const char * const LANGUAGES[] = {
     "aa",  "ab",  "ace", "ach", "ada", "ady", "ae",  "af",  
     "afa", "afh", "agq", "ain", "ak",  "akk", "ale", "alg", 
@@ -173,8 +172,8 @@ static const char * const LANGUAGES[] = {
     "wa",  "wae", "wak", "wal", "war", "was", "wen", "wo",  
     "xal", "xh",  "xog", 
     "yao", "yap", "yav", "ybb", "yi",  "yo",  "ypk", "yue", 
-    "za",  "zap", "zbl", "zen", "zh",  "znd", "zu",  "zun", 
-    "zxx", "zza", 
+    "za",  "zap", "zbl", "zen", "zgh", "zh",  "znd", "zu",  
+    "zun", "zxx", "zza", 
 NULL,
     "in",  "iw",  "ji",  "jw",  "sh",    /* obsolete language codes */
 NULL
@@ -204,7 +203,7 @@ static const char* const REPLACEMENT_LANGUAGES[]={
  * the two lists in LANGUAGES.
  */
 /* Generated using org.unicode.cldr.icu.GenerateISO639LanguageTables */
-/* ISO639 table version is 20130123 */
+/* ISO639 table version is 20130531 */
 static const char * const LANGUAGES_3[] = {
     "aar", "abk", "ace", "ach", "ada", "ady", "ave", "afr", 
     "afa", "afh", "agq", "ain", "aka", "akk", "ale", "alg", 
@@ -284,8 +283,8 @@ static const char * const LANGUAGES_3[] = {
     "wln", "wae", "wak", "wal", "war", "was", "wen", "wol", 
     "xal", "xho", "xog", 
     "yao", "yap", "yav", "ybb", "yid", "yor", "ypk", "yue", 
-    "zha", "zap", "zbl", "zen", "zho", "znd", "zul", "zun", 
-    "zxx", "zza", 
+    "zha", "zap", "zbl", "zen", "zgh", "zho", "znd", "zul", 
+    "zun", "zxx", "zza", 
 NULL,
 /*  "in",  "iw",  "ji",  "jw",  "sh",                          */
     "ind", "heb", "yid", "jaw", "srp",
@@ -678,6 +677,13 @@ _getKeywords(const char *localeID,
                     keywordList[numKeywords].keyword[n++] = uprv_tolower(pos[i]);
                 }
             }
+
+            /* zero-length keyword is an error. */
+            if (n == 0) {
+                *status = U_INVALID_FORMAT_ERROR;
+                return 0;
+            }
+
             keywordList[numKeywords].keyword[n] = 0;
             keywordList[numKeywords].keywordLen = n;
             /* now grab the value part. First we skip the '=' */
@@ -686,8 +692,15 @@ _getKeywords(const char *localeID,
             while(*equalSign == ' ') {
                 equalSign++;
             }
+
+            /* Premature end or zero-length value */
+            if (!equalSign || equalSign == semicolon) {
+                *status = U_INVALID_FORMAT_ERROR;
+                return 0;
+            }
+
             keywordList[numKeywords].valueStart = equalSign;
-            
+
             pos = semicolon;
             i = 0;
             if(pos) {
@@ -2095,6 +2108,39 @@ uloc_getLCID(const char* localeID)
         return 0;
     }
 
+    if (uprv_strchr(localeID, '@')) {
+        // uprv_convertToLCID does not support keywords other than collation.
+        // Remove all keywords except collation.
+        int32_t len;
+        char collVal[ULOC_KEYWORDS_CAPACITY];
+        char tmpLocaleID[ULOC_FULLNAME_CAPACITY];
+
+        len = uloc_getKeywordValue(localeID, "collation", collVal,
+            sizeof(collVal)/sizeof(collVal[0]) - 1, &status);
+
+        if (U_SUCCESS(status) && len > 0) {
+            collVal[len] = 0;
+
+            len = uloc_getBaseName(localeID, tmpLocaleID,
+                sizeof(tmpLocaleID)/sizeof(tmpLocaleID[0]) - 1, &status);
+
+            if (U_SUCCESS(status)) {
+                tmpLocaleID[len] = 0;
+
+                len = uloc_setKeywordValue("collation", collVal, tmpLocaleID,
+                    sizeof(tmpLocaleID)/sizeof(tmpLocaleID[0]) - len - 1, &status);
+
+                if (U_SUCCESS(status)) {
+                    tmpLocaleID[len] = 0;
+                    return uprv_convertToLCID(langID, tmpLocaleID, &status);
+                }
+            }
+        }
+
+        // fall through - all keywords are simply ignored
+        status = U_ZERO_ERROR;
+    }
+
     return uprv_convertToLCID(langID, localeID, &status);
 }
 
@@ -2102,19 +2148,7 @@ U_CAPI int32_t U_EXPORT2
 uloc_getLocaleForLCID(uint32_t hostid, char *locale, int32_t localeCapacity,
                 UErrorCode *status)
 {
-    int32_t length;
-    const char *posix = uprv_convertToPosix(hostid, status);
-    if (U_FAILURE(*status) || posix == NULL) {
-        return 0;
-    }
-    length = (int32_t)uprv_strlen(posix);
-    if (length+1 > localeCapacity) {
-        *status = U_BUFFER_OVERFLOW_ERROR;
-    }
-    else {
-        uprv_strcpy(locale, posix);
-    }
-    return length;
+    return uprv_convertToPosix(hostid, locale, localeCapacity, status);
 }
 
 /* ### Default locale **************************************************/
@@ -2488,6 +2522,106 @@ uloc_acceptLanguage(char *result, int32_t resultAvailable,
     }
     uprv_free(fallbackList);
     return -1;
+}
+
+U_CAPI const char* U_EXPORT2
+uloc_toUnicodeLocaleKey(const char* keyword)
+{
+    const char* bcpKey = ulocimp_toBcpKey(keyword);
+    if (bcpKey == NULL && ultag_isUnicodeLocaleKey(keyword, -1)) {
+        // unknown keyword, but syntax is fine..
+        return keyword;
+    }
+    return bcpKey;
+}
+
+U_CAPI const char* U_EXPORT2
+uloc_toUnicodeLocaleType(const char* keyword, const char* value)
+{
+    const char* bcpType = ulocimp_toBcpType(keyword, value, NULL, NULL);
+    if (bcpType == NULL && ultag_isUnicodeLocaleType(value, -1)) {
+        // unknown keyword, but syntax is fine..
+        return value;
+    }
+    return bcpType;
+}
+
+#define UPRV_ISDIGIT(c) (((c) >= '0') && ((c) <= '9'))
+#define UPRV_ISALPHANUM(c) (uprv_isASCIILetter(c) || UPRV_ISDIGIT(c) )
+
+static UBool
+isWellFormedLegacyKey(const char* legacyKey)
+{
+    const char* p = legacyKey;
+    while (*p) {
+        if (!UPRV_ISALPHANUM(*p)) {
+            return FALSE;
+        }
+        p++;
+    }
+    return TRUE;
+}
+
+static UBool
+isWellFormedLegacyType(const char* legacyType)
+{
+    const char* p = legacyType;
+    int32_t alphaNumLen = 0;
+    while (*p) {
+        if (*p == '_' || *p == '/' || *p == '-') {
+            if (alphaNumLen == 0) {
+                return FALSE;
+            }
+            alphaNumLen = 0;
+        } else if (UPRV_ISALPHANUM(*p)) {
+            alphaNumLen++;
+        } else {
+            return FALSE;
+        }
+        p++;
+    }
+    return (alphaNumLen != 0);
+}
+
+U_CAPI const char* U_EXPORT2
+uloc_toLegacyKey(const char* keyword)
+{
+    const char* legacyKey = ulocimp_toLegacyKey(keyword);
+    if (legacyKey == NULL) {
+        // Checks if the specified locale key is well-formed with the legacy locale syntax.
+        //
+        // Note:
+        //  Neither ICU nor LDML/CLDR provides the definition of keyword syntax.
+        //  However, a key should not contain '=' obviously. For now, all existing
+        //  keys are using ASCII alphabetic letters only. We won't add any new key
+        //  that is not compatible with the BCP 47 syntax. Therefore, we assume
+        //  a valid key consist from [0-9a-zA-Z], no symbols.
+        if (isWellFormedLegacyKey(keyword)) {
+            return keyword;
+        }
+    }
+    return legacyKey;
+}
+
+U_CAPI const char* U_EXPORT2
+uloc_toLegacyType(const char* keyword, const char* value)
+{
+    const char* legacyType = ulocimp_toLegacyType(keyword, value, NULL, NULL);
+    if (legacyType == NULL) {
+        // Checks if the specified locale type is well-formed with the legacy locale syntax.
+        //
+        // Note:
+        //  Neither ICU nor LDML/CLDR provides the definition of keyword syntax.
+        //  However, a type should not contain '=' obviously. For now, all existing
+        //  types are using ASCII alphabetic letters with a few symbol letters. We won't
+        //  add any new type that is not compatible with the BCP 47 syntax except timezone
+        //  IDs. For now, we assume a valid type start with [0-9a-zA-Z], but may contain
+        //  '-' '_' '/' in the middle.
+        if (isWellFormedLegacyType(value)) {
+            return value;
+        }
+    }
+    return legacyType;
 }
 
 /*eof*/

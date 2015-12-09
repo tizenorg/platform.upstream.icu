@@ -1,6 +1,6 @@
 /*
  *
- * (C) Copyright IBM Corp.  and others 1998-2013 - All Rights Reserved
+ * (C) Copyright IBM Corp.  and others 1998-2014 - All Rights Reserved
  *
  */
 
@@ -25,23 +25,23 @@ class LEGlyphStorage;
 class SegmentArrayProcessor2 : public NonContextualGlyphSubstitutionProcessor2
 {
 public:
-    virtual void process(LEGlyphStorage &glyphStorage);
+    virtual void process(LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
-    SegmentArrayProcessor2(const MorphSubtableHeader2 *morphSubtableHeader);
+    SegmentArrayProcessor2(const LEReferenceTo<MorphSubtableHeader2> &morphSubtableHeader, LEErrorCode &success);
 
     virtual ~SegmentArrayProcessor2();
 
     /**
      * ICU "poor man's RTTI", returns a UClassID for the actual class.
      *
-     * @stable ICU 2.8
+     * @deprecated ICU 54. See {@link icu::LayoutEngine}
      */
     virtual UClassID getDynamicClassID() const;
 
     /**
      * ICU "poor man's RTTI", returns a UClassID for this class.
      *
-     * @stable ICU 2.8
+     * @deprecated ICU 54. See {@link icu::LayoutEngine}
      */
     static UClassID getStaticClassID();
 
@@ -49,7 +49,7 @@ private:
     SegmentArrayProcessor2();
 
 protected:
-    const SegmentArrayLookupTable *segmentArrayLookupTable;
+    LEReferenceTo<SegmentArrayLookupTable> segmentArrayLookupTable;
 
 };
 
