@@ -1,11 +1,11 @@
 Name:      icu
-Version:   51.1
+Version:   54.1
 Release:   1
 Summary:   International Components for Unicode
 Group:     System/Libraries
 License:   ICU
 URL:       http://www.icu-project.org/
-%define tar_version 51_1
+%define tar_version 54_1
 Source0:   %{name}4c-%{tar_version}-src.tgz
 Source1001: 	icu.manifest
 BuildRequires: doxygen

@@ -26,7 +26,8 @@ CLEANFILES = *~ $(DEPS) $(MAN_FILES)
 ## Target information
 TARGET = $(BINDIR)/$(TARGET_STUB_NAME)$(EXEEXT)
 
-CPPFLAGS += -I$(top_srcdir)/common -I$(srcdir)/../toolutil
+CPPFLAGS += -fPIE -I$(top_srcdir)/common -I$(srcdir)/../toolutil
+LDFLAGS += -pie
 LIBS = $(LIBICUTOOLUTIL) $(LIBICUI18N) $(LIBICUUC) $(DEFAULT_LIBS) $(LIB_M)
 
 OBJECTS = icupkg.o
@@ -78,6 +79,8 @@ $(TARGET) : $(OBJECTS)
 	$(LINK.cc) $(OUTOPT)$@ $^ $(LIBS)
 	$(POST_BUILD_STEP)
 
+icupkg.o: icupkg.cpp
+	$(LINK.cc) $(CPPFLAGS) -c icupkg.cpp $(LIBS)
 
 %.$(SECTION): $(srcdir)/%.$(SECTION).in
 	cd $(top_builddir) \

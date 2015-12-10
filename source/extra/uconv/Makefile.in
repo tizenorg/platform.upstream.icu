@@ -42,8 +42,9 @@ CLEANFILES = *~ $(DEPS) $(ALL_MAN_FILES)
 ## Target information
 TARGET = $(BINDIR)/$(TARGET_STUB_NAME)$(EXEEXT)
 
-CPPFLAGS += -I$(top_srcdir)/common -I$(top_srcdir)/i18n -I$(srcdir)/../toolutil
+CPPFLAGS += -fPIE -I$(top_srcdir)/common -I$(top_srcdir)/i18n -I$(srcdir)/../toolutil
 CPPFLAGS += -DUNISTR_FROM_CHAR_EXPLICIT=explicit -DUNISTR_FROM_STRING_EXPLICIT=explicit
+LDFLAGS += -pie
 LIBS = $(LIBICUI18N) $(LIBICUUC) $(DEFAULT_LIBS) $(LIB_M)
 
 ifeq ($(PKGDATA_OPTS),)
@@ -144,6 +145,9 @@ $(TARGET_STUB_NAME).$(SECTION): $(srcdir)/$(TARGET_STUB_NAME).$(SECTION).in pkgd
 $(TARGET) : $(OBJECTS)  $(UCONVMSG_LIB)
 	$(LINK.cc) $(OUTOPT)$@ $(OBJECTS) $(LIBS)
 	$(POST_BUILD_STEP)
+
+uconv.o: uconv.cpp
+	$(LINK.cc) $(CPPFLAGS) -c uconv.cpp $(LIBICUI18N) $(LIBICUUC) $(DEFAULT_LIBS)
 
 # The | is an order-only prerequisite. This helps when the -j option is used,
 # and we don't want the files to be built before the directories are built.
