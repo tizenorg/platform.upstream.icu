@@ -313,8 +313,8 @@ en_GB{
         }
         gregorian{
             AmPmMarkers{
-                "am",
-                "pm",
+                "a.m.",
+                "p.m.",
             }
             DateTimePatterns{
                 "HH:mm:ss zzzz",
@@ -706,7 +706,7 @@ en_GB{
             }
         }
         dayperiod{
-            dn{"am/pm"}
+            dn{"a.m./p.m."}
         }
         hour-narrow{
             dn{"h"}
