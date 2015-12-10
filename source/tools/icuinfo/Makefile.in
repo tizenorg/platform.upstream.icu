@@ -21,7 +21,8 @@ CLEANFILES = *~ $(DEPS) $(PLUGIN_OBJECTS) $(PLUGINFILE) $(PLUGIN)
 TARGET = icuinfo$(EXEEXT)
 
 CPPFLAGS += -I$(top_srcdir)/common -I$(srcdir)/../toolutil -I$(top_srcdir)/tools/ctestfw 
-CPPFLAGS+= -I$(top_srcdir)/i18n
+CPPFLAGS+= -fPIE -I$(top_srcdir)/i18n
+LDFLAGS += -pie
 LIBS = $(LIBICUTOOLUTIL) $(LIBICUI18N) $(LIBICUUC) $(DEFAULT_LIBS) $(LIB_M)
 
 OBJECTS = icuinfo.o
@@ -74,6 +75,9 @@ Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
 $(TARGET) : $(OBJECTS)
 	$(LINK.cc) $(OUTOPT)$@ $^ $(LIBS) 
 	$(POST_BUILD_STEP)
+
+icuinfo.o: icuinfo.cpp
+	$(LINK.cc) $(CPPFLAGS) -c icuinfo.cpp $(LIBS)
 
 PLUGIN=$(LIBPREFIX)plugin.$(SO)
 SO_TARGET=$(PLUGIN)

@@ -27,7 +27,8 @@ CLEANFILES = *~ $(DEPS) $(MAN_FILES)
 ## Target information
 TARGET = $(BINDIR)/$(TARGET_STUB_NAME)$(EXEEXT)
 
-CPPFLAGS += -I$(top_srcdir)/common -I$(srcdir)/../toolutil
+CPPFLAGS += -fPIE -I$(top_srcdir)/common -I$(srcdir)/../toolutil
+LDFLAGS += -pie
 LIBS = $(LIBICUTOOLUTIL) $(LIBICUI18N) $(LIBICUUC) $(DEFAULT_LIBS) $(LIB_M)
 
 OBJECTS = gensprep.o store.o
@@ -78,6 +79,8 @@ $(TARGET) : $(OBJECTS)
 	$(LINK.cc) $(OUTOPT)$@ $^ $(LIBS) 
 	$(POST_BUILD_STEP)
 
+gensprep.o: gensprep.c
+	$(LINK.cc) $(CPPFLAGS) -c gensprep.c $(LIBS)
 
 %.$(SECTION): $(srcdir)/%.$(SECTION).in
 	cd $(top_builddir) \
