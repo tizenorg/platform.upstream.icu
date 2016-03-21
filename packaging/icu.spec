@@ -3,7 +3,7 @@ Version:   54.1
 Release:   1
 Summary:   International Components for Unicode
 Group:     System/Libraries
-License:   ICU and Unicode-TOU and BSD-2.0
+License:   ICU and Unicode-TOU and BSD-3-Clause
 URL:       http://www.icu-project.org/
 %define tar_version 54.1
 Source0:   %{name}-%{tar_version}.tar.gz
