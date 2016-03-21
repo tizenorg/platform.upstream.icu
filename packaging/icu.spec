@@ -43,6 +43,8 @@ cp %{SOURCE1001} .
 
 %build
 cd source
+export CFLAGS+=" -flto -fvisibility=hidden "
+export CXXFLAGS+=" -flto -fvisibility=hidden "
 %configure --disable-static \
             --disable-renaming \
             --enable-shared \
