@@ -1,6 +1,6 @@
 /*
 *******************************************************************************
-* Copyright (C) 1997-2014, International Business Machines Corporation and    *
+* Copyright (C) 1997-2016, International Business Machines Corporation and    *
 * others. All Rights Reserved.                                                *
 *******************************************************************************
 *
@@ -57,6 +57,9 @@
 #include "ustrenum.h"
 #include "uassert.h"
 #include "olsontz.h"
+#include "sharedcalendar.h"
+#include "unifiedcache.h"
+#include "ulocimp.h"
 
 #if !UCONFIG_NO_SERVICE
 static icu::ICULocaleService* gService = NULL;
@@ -199,6 +202,27 @@ typedef enum ECalType {
 
 U_NAMESPACE_BEGIN
 
+SharedCalendar::~SharedCalendar() {
+    delete ptr;
+}
+
+template<> U_I18N_API
+const SharedCalendar *LocaleCacheKey<SharedCalendar>::createObject(
+        const void * /*unusedCreationContext*/, UErrorCode &status) const {
+    Calendar *calendar = Calendar::makeInstance(fLoc, status);
+    if (U_FAILURE(status)) {
+        return NULL; 
+    }
+    SharedCalendar *shared = new SharedCalendar(calendar);
+    if (shared == NULL) {
+        delete calendar;
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return NULL;
+    }
+    shared->addRef();
+    return shared;
+}
+
 static ECalType getCalendarType(const char *s) {
     for (int i = 0; gCalTypes[i] != NULL; i++) {
         if (uprv_stricmp(s, gCalTypes[i]) == 0) {
@@ -261,17 +285,10 @@ static ECalType getCalendarTypeForLocale(const char *locid) {
     // when calendar keyword is not available or not supported, read supplementalData
     // to get the default calendar type for the locale's region
     char region[ULOC_COUNTRY_CAPACITY];
-    int32_t regionLen = 0;
-    regionLen = uloc_getCountry(canonicalName, region, sizeof(region) - 1, &status);
-    if (regionLen == 0) {
-        char fullLoc[256];
-        uloc_addLikelySubtags(locid, fullLoc, sizeof(fullLoc) - 1, &status);
-        regionLen = uloc_getCountry(fullLoc, region, sizeof(region) - 1, &status);
-    }
+    (void)ulocimp_getRegionForSupplementalData(canonicalName, TRUE, region, sizeof(region), &status);
     if (U_FAILURE(status)) {
         return CALTYPE_GREGORIAN;
     }
-    region[regionLen] = 0;
     
     // Read preferred calendar values from supplementalData calendarPreference
     UResourceBundle *rb = ures_openDirect(NULL, "supplementalData", &status);
@@ -612,8 +629,8 @@ static const int32_t kCalendarLimits[UCAL_FIELD_COUNT][4] = {
     {           1,            1,             7,             7  }, // DOW_LOCAL
     {/*N/A*/-1,       /*N/A*/-1,     /*N/A*/-1,       /*N/A*/-1}, // EXTENDED_YEAR
     { -0x7F000000,  -0x7F000000,    0x7F000000,    0x7F000000  }, // JULIAN_DAY
-    {           0,            0, 24*kOneHour-1, 24*kOneHour-1  },  // MILLISECONDS_IN_DAY
-    {           0,            0,             1,             1  },  // IS_LEAP_MONTH
+    {           0,            0, 24*kOneHour-1, 24*kOneHour-1  }, // MILLISECONDS_IN_DAY
+    {           0,            0,             1,             1  }, // IS_LEAP_MONTH
 };
 
 // Resource bundle tags read by this class
@@ -833,9 +850,8 @@ Calendar::createInstance(const Locale& aLocale, UErrorCode& success)
 
 // Note: this is the bottleneck that actually calls the service routines.
 
-Calendar* U_EXPORT2
-Calendar::createInstance(TimeZone* zone, const Locale& aLocale, UErrorCode& success)
-{
+Calendar * U_EXPORT2
+Calendar::makeInstance(const Locale& aLocale, UErrorCode& success) {
     if (U_FAILURE(success)) {
         return NULL;
     }
@@ -855,7 +871,6 @@ Calendar::createInstance(TimeZone* zone, const Locale& aLocale, UErrorCode& succ
     Calendar* c = NULL;
 
     if(U_FAILURE(success) || !u) {
-        delete zone;
         if(U_SUCCESS(success)) { // Propagate some kind of err
             success = U_INTERNAL_PROGRAM_ERROR;
         }
@@ -884,7 +899,6 @@ Calendar::createInstance(TimeZone* zone, const Locale& aLocale, UErrorCode& succ
         c = (Calendar*)getCalendarService(success)->get(l, LocaleKey::KIND_ANY, &actualLoc2, success);
 
         if(U_FAILURE(success) || !c) {
-            delete zone;
             if(U_SUCCESS(success)) { 
                 success = U_INTERNAL_PROGRAM_ERROR; // Propagate some err
             }
@@ -910,7 +924,6 @@ Calendar::createInstance(TimeZone* zone, const Locale& aLocale, UErrorCode& succ
 #endif
             success = U_MISSING_RESOURCE_ERROR;  // requested a calendar type which could NOT be found.
             delete c;
-            delete zone;
             return NULL;
         }
 #ifdef U_DEBUG_CALSVC
@@ -933,8 +946,27 @@ Calendar::createInstance(TimeZone* zone, const Locale& aLocale, UErrorCode& succ
         c = (Calendar*)u;
     }
 
+    return c;
+}
+
+Calendar* U_EXPORT2
+Calendar::createInstance(TimeZone* zone, const Locale& aLocale, UErrorCode& success)
+{
+    LocalPointer<TimeZone> zonePtr(zone);
+    const SharedCalendar *shared = NULL;
+    UnifiedCache::getByLocale(aLocale, shared, success);
+    if (U_FAILURE(success)) {
+        return NULL;
+    }
+    Calendar *c = (*shared)->clone();
+    shared->removeRef();
+    if (c == NULL) {
+        success = U_MEMORY_ALLOCATION_ERROR;
+        return NULL;
+    }
+
     // Now, reset calendar to default state:
-    c->adoptTimeZone(zone); //  Set the correct time zone
+    c->adoptTimeZone(zonePtr.orphan()); //  Set the correct time zone
     c->setTimeInMillis(getNow(), success); // let the new calendar have the current time.
 
     return c;
@@ -953,6 +985,24 @@ Calendar::createInstance(const TimeZone& zone, const Locale& aLocale, UErrorCode
 }
 
 // -------------------------------------
+
+void U_EXPORT2
+Calendar::getCalendarTypeFromLocale(
+        const Locale &aLocale,
+        char *typeBuffer,
+        int32_t typeBufferSize,
+        UErrorCode &success) {
+    const SharedCalendar *shared = NULL;
+    UnifiedCache::getByLocale(aLocale, shared, success);
+    if (U_FAILURE(success)) {
+        return;
+    }
+    uprv_strncpy(typeBuffer, (*shared)->getType(), typeBufferSize);
+    shared->removeRef();
+    if (typeBuffer[typeBufferSize - 1]) {
+        success = U_BUFFER_OVERFLOW_ERROR;
+    }
+}
 
 UBool
 Calendar::operator==(const Calendar& that) const
@@ -2075,6 +2125,7 @@ void Calendar::add(UCalendarDateFields field, int32_t amount, UErrorCode& status
         }
       }
       // Fall through into normal handling
+      U_FALLTHROUGH;
     case UCAL_EXTENDED_YEAR:
     case UCAL_MONTH:
       {
@@ -2551,6 +2602,7 @@ Calendar::isWeekend(void) const
                             (millisInDay <  transitionMillis);
                     }
                     // else fall through, return FALSE
+                    U_FALLTHROUGH;
                 }
             default:
                 break;
@@ -3589,7 +3641,7 @@ void Calendar::prepareGetActual(UCalendarDateFields field, UBool isMinimum, UErr
 
     case UCAL_YEAR_WOY:
         set(UCAL_WEEK_OF_YEAR, getGreatestMinimum(UCAL_WEEK_OF_YEAR));
-
+        U_FALLTHROUGH;
     case UCAL_MONTH:
         set(UCAL_DATE, getGreatestMinimum(UCAL_DATE));
         break;
@@ -3750,11 +3802,13 @@ Calendar::setWeekData(const Locale& desiredLocale, const char *type, UErrorCode&
         return;
     }
 
-    
+    char region[ULOC_COUNTRY_CAPACITY];
+    (void)ulocimp_getRegionForSupplementalData(desiredLocale.getName(), TRUE, region, sizeof(region), &status);
+
     // Read week data values from supplementalData week data
     UResourceBundle *rb = ures_openDirect(NULL, "supplementalData", &status);
     ures_getByKey(rb, "weekData", rb, &status);
-    UResourceBundle *weekData = ures_getByKey(rb, useLocale.getCountry(), NULL, &status);
+    UResourceBundle *weekData = ures_getByKey(rb, region, NULL, &status);
     if (status == U_MISSING_RESOURCE_ERROR && rb != NULL) {
         status = U_ZERO_ERROR;
         weekData = ures_getByKey(rb, "001", NULL, &status);
