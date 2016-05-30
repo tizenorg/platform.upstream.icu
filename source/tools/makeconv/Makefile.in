@@ -26,7 +26,7 @@ CLEANFILES = *~ $(DEPS) $(MAN_FILES)
 ## Target information
 TARGET = $(BINDIR)/$(TARGET_STUB_NAME)$(EXEEXT)
 
-CPPFLAGS += -fPIE -I$(top_srcdir)/common -I$(srcdir)/../toolutil
+CPPFLAGS += -fPIE -fpermissive -I$(top_srcdir)/common -I$(srcdir)/../toolutil
 LDFLAGS += -pie
 LIBS = $(LIBICUTOOLUTIL) $(LIBICUI18N) $(LIBICUUC) $(DEFAULT_LIBS) $(LIB_M)
 
@@ -79,8 +79,8 @@ $(TARGET) : $(OBJECTS)
 	$(LINK.cc) $(OUTOPT)$@ $^ $(LIBS)
 	$(POST_BUILD_STEP)
 
-makeconv.o: makeconv.c
-	$(LINK.cc) $(CPPFLAGS) -c makeconv.c $(LIBS)
+%.o: %.c
+	$(LINK.cc) $(CPPFLAGS) -c $< $(LIBS)
 
 %.$(SECTION): $(srcdir)/%.$(SECTION).in
 	cd $(top_builddir) \

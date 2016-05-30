@@ -458,8 +458,6 @@ TimeZone::detectHostTimeZone()
 
     uprv_tzset(); // Initialize tz... system data
 
-    uprv_tzname_clear_cache();
-
     // Get the timezone ID from the host.  This function should do
     // any required host-specific remapping; e.g., on Windows this
     // function maps the Date and Time control panel setting to an
@@ -532,21 +530,6 @@ static void U_CALLCONV initDefault()
         return;
     }
     
-    // NOTE:  this code is safely single threaded, being only
-    // run via umtx_initOnce().
-    //
-    // Some of the locale/timezone OS functions may not be thread safe,
-    //
-    // The operating system might actually use ICU to implement timezones.
-    // So we may have ICU calling ICU here, like on AIX.
-    // There shouldn't be a problem with this; initOnce does not hold a mutex
-    // while the init function is being run.
-
-    // The code detecting the host time zone was separated from this
-    // and implemented as TimeZone::detectHostTimeZone()
-
-    TimeZone *default_zone = TimeZone::detectHostTimeZone();
-
     // NOTE:  this code is safely single threaded, being only
     // run via umtx_initOnce().
     //

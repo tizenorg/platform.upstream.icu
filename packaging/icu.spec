@@ -1,12 +1,17 @@
+%define run_tests 0
+%if %{run_tests}
+    # check is defined off at .rpmmacros file.
+    %define check %%check
+%endif
+
 Name:      icu
-Version:   54.1
+Version:   57.1
 Release:   1
 Summary:   International Components for Unicode
 Group:     System/Libraries
 License:   ICU and Unicode-TOU and BSD-3-Clause
 URL:       http://www.icu-project.org/
-%define tar_version 54.1
-Source0:   %{name}-%{tar_version}.tar.gz
+Source0:   %{name}-%{version}.tar.gz
 Source1001: 	icu.manifest
 BuildRequires: doxygen
 BuildRequires: autoconf
@@ -46,8 +51,16 @@ cd source
 %configure --disable-static \
             --disable-renaming \
             --enable-shared \
+            --enable-plugins \
             --disable-samples
 make %{?_smp_mflags}
+
+%check
+%if %{run_tests}
+    pushd source
+    %__make check || exit 0
+    popd
+%endif
 
 %install
 cd source
@@ -84,7 +97,7 @@ chmod +x %{buildroot}/%{_libdir}/lib*.so.*
 %dir %{_datadir}/icu/%{version}
 %{_datadir}/icu/%{version}/config/mh-linux
 %{_datadir}/icu/%{version}/install-sh
-%{_datadir}/icu/%{version}/license.html
+%{_datadir}/icu/%{version}/LICENSE
 %{_datadir}/icu/%{version}/mkinstalldirs
 
 %files -n libicu-devel
